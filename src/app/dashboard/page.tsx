@@ -3,19 +3,23 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
-  FileText, Plus, Star, Archive, Trash2, MoreVertical, Clock, FolderOpen, Search
+  FileText, Star, Archive, MoreVertical, Clock, FolderOpen, Search,
 } from "lucide-react";
-import { getAllDocuments, deleteDocument, toggleFavorite, archiveDocument, getDocumentCount, MAX_FREE_DOCS } from "@/lib/storage";
+import { getAllDocuments, archiveDocument, toggleFavorite, getDocumentCount, MAX_FREE_DOCS } from "@/lib/storage";
 import { TemplateCard } from "@/components/templates/TemplateCard";
+import { Modal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/utils";
 import type { SavedDocument, Template } from "@/types";
 
 export default function DashboardPage() {
+  const toast = useToast();
   const [docs, setDocs] = useState<SavedDocument[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [docCount, setDocCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [archiveModal, setArchiveModal] = useState<{ open: boolean; docId: string | null }>({ open: false, docId: null });
 
   const loadData = useCallback(async () => {
     const [d, count] = await Promise.all([getAllDocuments(), getDocumentCount()]);
@@ -31,9 +35,9 @@ export default function DashboardPage() {
     loadData().finally(() => setLoading(false));
   }, [loadData]);
 
-  async function handleDelete(id: string) {
-    if (!confirm("Удалить документ? Это действие необратимо.")) return;
-    await deleteDocument(id);
+  async function handleArchive(id: string) {
+    await archiveDocument(id);
+    toast.info("Документ перемещён в архив");
     loadData();
     setActiveMenu(null);
   }
@@ -44,17 +48,19 @@ export default function DashboardPage() {
     setActiveMenu(null);
   }
 
-  async function handleArchive(id: string) {
-    await archiveDocument(id);
-    loadData();
+  // In dashboard: "delete" = move to archive (soft delete), not permanent
+  function confirmArchive(id: string) {
+    setArchiveModal({ open: true, docId: id });
     setActiveMenu(null);
   }
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Storage bar */}
-      <div className="mb-6 p-3 rounded-xl flex items-center gap-3 text-sm"
-        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div
+        className="mb-6 p-3 rounded-xl flex items-center gap-3 text-sm"
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+      >
         <div className="flex-1">
           <div className="flex justify-between mb-1">
             <span style={{ color: "var(--text-muted)" }}>Хранилище браузера</span>
@@ -80,15 +86,13 @@ export default function DashboardPage() {
       {/* My documents */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-lg" style={{ color: "var(--text)" }}>
-            Мои документы
-          </h2>
+          <h2 className="font-semibold text-lg" style={{ color: "var(--text)" }}>Мои документы</h2>
           <span className="text-sm" style={{ color: "var(--text-muted)" }}>{docs.length} шт.</span>
         </div>
 
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[1,2,3].map((i) => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="card animate-pulse h-28" style={{ background: "var(--border)" }} />
             ))}
           </div>
@@ -105,8 +109,10 @@ export default function DashboardPage() {
             {docs.map((doc) => (
               <div key={doc.id} className="card group relative">
                 <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center"
-                    style={{ background: "var(--brand-light)" }}>
+                  <div
+                    className="w-9 h-9 rounded-lg flex-shrink-0 flex items-center justify-center"
+                    style={{ background: "var(--brand-light)" }}
+                  >
                     <FileText className="w-4 h-4" style={{ color: "var(--brand)" }} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -119,7 +125,6 @@ export default function DashboardPage() {
                   {doc.isFavorite && <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 flex-shrink-0" />}
                 </div>
 
-                {/* Actions */}
                 <div className="mt-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Link
                     href={`/editor/${doc.templateId}?docId=${doc.id}`}
@@ -135,20 +140,30 @@ export default function DashboardPage() {
                       <MoreVertical className="w-4 h-4" />
                     </button>
                     {activeMenu === doc.id && (
-                      <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-xl shadow-lg overflow-hidden"
-                        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                        <button onClick={() => handleToggleFavorite(doc.id)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[var(--bg)] transition-colors" style={{ color: "var(--text)" }}>
+                      <div
+                        className="absolute right-0 top-full mt-1 z-20 w-48 rounded-xl shadow-lg overflow-hidden"
+                        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+                      >
+                        <button
+                          onClick={() => handleToggleFavorite(doc.id)}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[var(--bg)] transition-colors"
+                          style={{ color: "var(--text)" }}
+                        >
                           <Star className="w-3.5 h-3.5" />
                           {doc.isFavorite ? "Убрать из избранного" : "В избранное"}
                         </button>
-                        <button onClick={() => handleArchive(doc.id)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[var(--bg)] transition-colors" style={{ color: "var(--text)" }}>
+                        <button
+                          onClick={() => handleArchive(doc.id)}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-[var(--bg)] transition-colors"
+                          style={{ color: "var(--text)" }}
+                        >
                           <Archive className="w-3.5 h-3.5" /> В архив
                         </button>
-                        <button onClick={() => handleDelete(doc.id)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-red-50 transition-colors text-red-600">
-                          <Trash2 className="w-3.5 h-3.5" /> Удалить
+                        <button
+                          onClick={() => confirmArchive(doc.id)}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-red-50 transition-colors text-red-600"
+                        >
+                          <Archive className="w-3.5 h-3.5" /> Удалить (в архив)
                         </button>
                       </div>
                     )}
@@ -163,24 +178,35 @@ export default function DashboardPage() {
       {/* Templates */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-lg" style={{ color: "var(--text)" }}>
-            Популярные шаблоны
-          </h2>
+          <h2 className="font-semibold text-lg" style={{ color: "var(--text)" }}>Популярные шаблоны</h2>
           <Link href="/dashboard/templates" className="text-sm font-medium" style={{ color: "var(--brand)" }}>
             Все шаблоны →
           </Link>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((t) => (
-            <TemplateCard key={t.id} template={t} />
-          ))}
-          <Link href="/dashboard/templates"
+          {templates.map((t) => <TemplateCard key={t.id} template={t} />)}
+          <Link
+            href="/dashboard/templates"
             className="card flex items-center justify-center gap-2 text-sm font-medium cursor-pointer hover:shadow-card-hover"
-            style={{ color: "var(--text-muted)", minHeight: 80 }}>
+            style={{ color: "var(--text-muted)", minHeight: 80 }}
+          >
             <Search className="w-4 h-4" /> Найти больше шаблонов
           </Link>
         </div>
       </section>
+
+      {/* Archive confirmation modal */}
+      <Modal
+        open={archiveModal.open}
+        title="Переместить в архив?"
+        message="Документ будет перемещён в архив. Вы сможете восстановить его позже из раздела «Архив»."
+        confirmText="В архив"
+        cancelText="Отмена"
+        onConfirm={() => {
+          if (archiveModal.docId) handleArchive(archiveModal.docId);
+        }}
+        onClose={() => setArchiveModal({ open: false, docId: null })}
+      />
     </div>
   );
 }

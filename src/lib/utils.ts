@@ -54,9 +54,11 @@ export function applyFields(
     const dateStr = allValues.sign_date || allValues.doc_date || allValues.order_date;
     if (dateStr) {
       try {
-        const d = parseISO(dateStr.includes(".")
-          ? dateStr.split(".").reverse().join("-")
-          : dateStr);
+        const d = parseISO(
+          dateStr.includes(".")
+            ? dateStr.split(".").reverse().join("-")
+            : dateStr
+        );
         allValues.sign_day = format(d, "d");
         allValues.sign_month = format(d, "MMMM", { locale: ru });
         allValues.sign_year = format(d, "yyyy");
@@ -65,23 +67,16 @@ export function applyFields(
   }
 
   // Replace all {{field}} placeholders
+  // Empty fields get underscores — proper legal document blank style, not {{field_id}}
   for (const [key, value] of Object.entries(allValues)) {
     const re = new RegExp(`\\{\\{${key}\\}\\}`, "g");
-    result = result.replace(re, value || `{{${key}}}`);
+    result = result.replace(re, value || "________________");
   }
 
-  return result;
-}
+  // Replace any remaining {{...}} patterns (fields not in fieldValues)
+  result = result.replace(/\{\{[^}]+\}\}/g, "________________");
 
-/** Extract field values from rendered content (reverse of applyFields) */
-export function extractFieldValues(
-  content: string,
-  fields: { id: string }[]
-): Record<string, string> {
-  const values: Record<string, string> = {};
-  // We can't reliably reverse HTML parsing, so just return empty
-  // The sidebar keeps its own state
-  return values;
+  return result;
 }
 
 export function truncate(str: string, maxLength: number) {

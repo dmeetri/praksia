@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, FileText, Users, Settings, LogOut, ChevronRight
+  LayoutDashboard, FileText, Users, LogOut, ChevronRight,
+  MessageSquare, Home,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ const navItems = [
   { label: "Дашборд", icon: LayoutDashboard, href: "/admin" },
   { label: "Шаблоны", icon: FileText, href: "/admin/templates" },
   { label: "Пользователи", icon: Users, href: "/admin/users" },
+  { label: "Сообщения", icon: MessageSquare, href: "/admin/feedback" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -19,8 +21,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex h-screen" style={{ background: "#f8fafc" }}>
-      {/* Sidebar — admin only (light theme) */}
-      <aside className="w-56 flex-shrink-0 flex flex-col border-r" style={{ background: "#fff", borderColor: "#e2e8f0" }}>
+      {/* Sidebar */}
+      <aside
+        className="w-56 flex-shrink-0 flex flex-col border-r"
+        style={{ background: "#fff", borderColor: "#e2e8f0" }}
+      >
         <div className="p-4 border-b" style={{ borderColor: "#e2e8f0" }}>
           <Link href="/admin" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
@@ -35,7 +40,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <nav className="p-3 flex-1 space-y-0.5">
           {navItems.map(({ label, icon: Icon, href }) => {
-            const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
+            const active =
+              pathname === href || (href !== "/admin" && pathname.startsWith(href));
             return (
               <Link
                 key={href}
@@ -60,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/dashboard"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
           >
-            <Settings className="w-4 h-4" />
+            <Home className="w-4 h-4" />
             На сайт
           </Link>
           <button
@@ -73,7 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
-      {/* Main */}
+      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>

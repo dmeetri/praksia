@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, XCircle, Download, FileDown, Mail, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Download, FileDown, Mail, Loader2, LogIn } from "lucide-react";
+import Link from "next/link";
 import type { TemplateField } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,9 @@ interface FieldsSidebarProps {
   allValid: boolean;
   onExportPDF: () => void;
   onExportDOCX: () => void;
-  onEmail: () => void;
+  onEmail?: () => void;
   exporting: boolean;
+  isGuest?: boolean;
 }
 
 export function FieldsSidebar({
@@ -31,6 +33,7 @@ export function FieldsSidebar({
   onExportDOCX,
   onEmail,
   exporting,
+  isGuest = false,
 }: FieldsSidebarProps) {
   const editableFields = fields.filter((f) => !f.computed);
 
@@ -91,26 +94,25 @@ export function FieldsSidebar({
       </div>
 
       {/* Validation */}
-      <div className="p-4 border-t" style={{ borderColor: "var(--border)" }}>
-        <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text)" }}>
-          Проверка перед печатью
-        </h3>
-        <div className="space-y-2">
-          {validation.map(({ field, valid }) => (
-            <div key={field.id} className={cn("check-item", valid && "valid", !valid && "invalid")}>
-              {valid ? (
-                <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
-              ) : (
-                <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
-              )}
-              <span className="text-xs">{field.label}</span>
-            </div>
-          ))}
-          {validation.length === 0 && (
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Все поля заполнены</p>
-          )}
+      {validation.length > 0 && (
+        <div className="p-4 border-t" style={{ borderColor: "var(--border)" }}>
+          <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text)" }}>
+            Проверка перед печатью
+          </h3>
+          <div className="space-y-2">
+            {validation.map(({ field, valid }) => (
+              <div key={field.id} className={cn("check-item", valid && "valid", !valid && "invalid")}>
+                {valid ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                ) : (
+                  <XCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                )}
+                <span className="text-xs">{field.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Export */}
       <div className="p-4 border-t" style={{ borderColor: "var(--border)" }}>
@@ -140,17 +142,42 @@ export function FieldsSidebar({
             </div>
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>→</span>
           </button>
-          <button
-            onClick={onEmail}
-            className="btn-secondary w-full justify-between text-sm py-2.5"
-          >
-            <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-green-600" />
-              Отправить по email
-            </div>
-            <span className="text-xs" style={{ color: "var(--text-muted)" }}>→</span>
-          </button>
+
+          {isGuest ? (
+            <Link
+              href="/login"
+              className="btn-secondary w-full justify-between text-sm py-2.5 flex items-center"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Отправить по email
+              </div>
+              <span className="text-xs badge badge-gray">Войти</span>
+            </Link>
+          ) : (
+            <button
+              onClick={onEmail}
+              className="btn-secondary w-full justify-between text-sm py-2.5"
+            >
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-green-600" />
+                Отправить по email
+              </div>
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>→</span>
+            </button>
+          )}
         </div>
+
+        {/* Guest note */}
+        {isGuest && (
+          <div className="mt-3 p-3 rounded-lg text-xs" style={{ background: "var(--bg)", color: "var(--text-muted)" }}>
+            <p className="mb-1 font-medium" style={{ color: "var(--text)" }}>Документ в браузере</p>
+            Ваши документы хранятся только на этом устройстве.{" "}
+            <Link href="/register" className="text-blue-600 hover:underline">Зарегистрируйтесь</Link>
+            {" "}для облачного хранения.
+          </div>
+        )}
       </div>
     </aside>
   );

@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import db from "@/lib/db";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
 import type { Metadata } from "next";
@@ -16,14 +18,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function EditorPage({ params }: Props) {
-  const template = await db.template.findUnique({
-    where: { id: params.templateId, isActive: true },
-    include: { category: true },
-  });
+  const [template, session] = await Promise.all([
+    db.template.findUnique({
+      where: { id: params.templateId, isActive: true },
+      include: { category: true },
+    }),
+    getServerSession(authOptions),
+  ]);
 
   if (!template) notFound();
 
-  // Serialize
   const t = {
     ...template,
     fields: template.fields as unknown as import("@/types").TemplateField[],
@@ -32,5 +36,5 @@ export default async function EditorPage({ params }: Props) {
     updatedAt: template.updatedAt.toISOString(),
   };
 
-  return <DocumentEditor template={t} />;
+  return <DocumentEditor template={t} isGuest={!session} />;
 }

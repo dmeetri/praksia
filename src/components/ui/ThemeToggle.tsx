@@ -10,21 +10,21 @@ export function ThemeToggle({ className }: { className?: string }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
-  if (!mounted) return <div className="w-8 h-8" />;
+  if (!mounted) return <div className="w-10 h-10" />;
 
   return (
     <button
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       className={cn(
-        "w-8 h-8 flex items-center justify-center rounded-lg transition-colors btn-ghost",
+        "w-10 h-10 flex items-center justify-center rounded-xl transition-colors btn-ghost",
         className
       )}
       title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
     >
       {theme === "dark" ? (
-        <Sun className="w-4 h-4" />
+        <Sun className="w-5 h-5" />
       ) : (
-        <Moon className="w-4 h-4" />
+        <Moon className="w-5 h-5" />
       )}
     </button>
   );

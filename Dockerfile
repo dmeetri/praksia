@@ -29,7 +29,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY prisma ./prisma
 COPY package.json tsconfig.json ./
 COPY src ./src
-CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts"]
+COPY scripts/migrate.sh ./migrate.sh
+RUN chmod +x ./migrate.sh
+CMD ["sh", "migrate.sh"]
 
 # Production image
 FROM base AS runner

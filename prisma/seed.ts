@@ -704,6 +704,16 @@ async function main() {
       },
     });
     console.log(`✅ Admin user: ${adminEmail}`);
+    console.log("");
+    console.log("════════════════════════════════════════════════════");
+    console.log("  ДАННЫЕ АДМИНИСТРАТОРА (сохраните их!)");
+    console.log("════════════════════════════════════════════════════");
+    console.log(`  URL:      /admin`);
+    console.log(`  Email:    ${adminEmail}`);
+    console.log(`  Пароль:   Admin123!@#`);
+    console.log("  ⚠️  Смените пароль после первого входа!");
+    console.log("════════════════════════════════════════════════════");
+    console.log("");
   }
 
   console.log("🎉 Seed complete!");

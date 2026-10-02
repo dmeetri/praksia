@@ -60,12 +60,27 @@ model User {
   isAdmin       Boolean   @default(false)
   isBlocked     Boolean   @default(false)
 
+  resetToken        String?   @unique
+  resetTokenExpires DateTime?
+
   accounts     Account[]
   sessions     Session[]
   subscription Subscription?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── Feedback / Waitlist ──────────────────────────────────────────────────────
+
+model FeedbackMessage {
+  id        String   @id @default(cuid())
+  email     String
+  name      String?
+  message   String?  @db.Text
+  type      String   @default("waitlist") // waitlist | contact | support
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 // ─── Subscription ────────────────────────────────────────────────────────────

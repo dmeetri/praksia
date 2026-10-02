@@ -11,17 +11,25 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
     if (password.length < 8) {
       setError("Пароль должен содержать минимум 8 символов");
       return;
     }
+    if (password !== confirm) {
+      setError("Пароли не совпадают");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
@@ -42,6 +50,8 @@ export default function RegisterPage() {
       setLoading(false);
     }
   }
+
+  const passwordsMatch = confirm === "" || password === confirm;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--bg)" }}>
@@ -111,9 +121,36 @@ export default function RegisterPage() {
                 </button>
               </div>
             </div>
+            <div>
+              <label className="label">Повторите пароль</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  className={`input pr-10 ${confirm && !passwordsMatch ? "border-red-400" : confirm && passwordsMatch ? "border-green-400" : ""}`}
+                  placeholder="Введите пароль ещё раз"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {confirm && !passwordsMatch && (
+                <p className="text-xs mt-1 text-red-500">Пароли не совпадают</p>
+              )}
+              {confirm && passwordsMatch && (
+                <p className="text-xs mt-1 text-green-600">Пароли совпадают ✓</p>
+              )}
+            </div>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (confirm !== "" && !passwordsMatch)}
               className="btn-primary w-full justify-center py-2.5"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Создать аккаунт"}

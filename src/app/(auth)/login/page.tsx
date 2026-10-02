@@ -93,6 +93,11 @@ function LoginForm() {
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Войти"}
         </button>
+        <div className="text-center">
+          <Link href="/forgot-password" className="text-sm hover:underline" style={{ color: "var(--text-muted)" }}>
+            Забыли пароль?
+          </Link>
+        </div>
       </form>
     </div>
   );

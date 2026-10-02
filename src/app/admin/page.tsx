@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { FileText, Users, LayoutDashboard, TrendingUp } from "lucide-react";
 import db from "@/lib/db";
 import Link from "next/link";

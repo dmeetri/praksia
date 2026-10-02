@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import db from "@/lib/db";
@@ -14,10 +13,6 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -53,7 +48,6 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
       }
-      // Refresh admin status on each token refresh
       if (token.id) {
         const dbUser = await db.user.findUnique({
           where: { id: token.id as string },
@@ -78,7 +72,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-// Extend next-auth types
 declare module "next-auth" {
   interface Session {
     user: {

@@ -4,12 +4,12 @@ FROM node:20-alpine AS base
 FROM base AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
-
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
+RUN apk add --no-cache openssl
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -20,6 +20,16 @@ RUN npx prisma generate
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
+
+# Migration stage — used by the migrate service in docker-compose
+FROM base AS migrate
+RUN apk add --no-cache openssl
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY prisma ./prisma
+COPY package.json tsconfig.json ./
+COPY src ./src
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx prisma/seed.ts"]
 
 # Production image
 FROM base AS runner
